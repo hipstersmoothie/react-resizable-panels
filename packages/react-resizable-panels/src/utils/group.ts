@@ -14,7 +14,7 @@ export function adjustByDelta(
   initialDragState: InitialDragState | null
 ): number[] {
   const { id: groupId, panels, units } = committedValues;
-  const fullDelta = Math.abs(deltaPixels);
+  let fullDelta = Math.abs(deltaPixels);
   const groupSizePixels =
     units === "pixels" ? getAvailableGroupSizePixels(groupId) : NaN;
 
@@ -65,12 +65,22 @@ export function adjustByDelta(
           panelSizeBeforeCollapse.set(panel.current.id, baseSize);
         }
 
+        const collapsedSize = normalizePixelValue(
+          units,
+          groupSizePixels,
+          panel.current.collapsedSize
+        );
+
+        // If the panel collapses that changes how big the delta is
+        if (nextSize !== prevSizes[index] && nextSize === collapsedSize) {
+          fullDelta = baseSize - collapsedSize;
+        }
+
         deltaApplied += baseSize - nextSize;
         nextSizes[index] = nextSize;
 
         // If the panel isn't at it's min size, we can stop here
         // this panel has room to modify.
-        if (nextSize !== panel.current.minSize) {
         if (nextSize !== prevSizes[index]) {
           hasRoom = true;
           break;
