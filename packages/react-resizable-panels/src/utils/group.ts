@@ -104,10 +104,17 @@ export function adjustByDelta(
       if (oppositeBaseSize !== oppositeNextSize) {
         nextSizes[oppositeIndex] = oppositeNextSize;
         deltaAppliedToOpposite += oppositeNextSize - oppositeBaseSize;
+        const currentMax = oppositePanel.current.maxSize
+          ? normalizePixelValue(
+              units,
+              groupSizePixels,
+              oppositePanel.current.maxSize
+            )
+          : undefined;
 
         // If the panel isn't at it's max size, we can stop here
         // there is room to modify this panel.
-        if (oppositeNextSize !== oppositePanel.current.maxSize) {
+        if (oppositeNextSize !== currentMax) {
           hasRoom = true;
           break;
         }
@@ -148,6 +155,8 @@ export function adjustByDelta(
 }
 
 export function callPanelCallbacks(
+  units: Units,
+  groupId: string,
   panelsArray: PanelData[],
   sizes: number[],
   panelIdToLastNotifiedSizeMap: Record<string, number>
@@ -172,15 +181,22 @@ export function callPanelCallbacks(
         onResize(size, lastNotifiedSize);
       }
 
+      const collapsePercentage = normalizePixelValue(
+        units,
+        getAvailableGroupSizePixels(groupId),
+        collapsedSize
+      );
+
       if (collapsible && onCollapse) {
         if (
-          (lastNotifiedSize == null || lastNotifiedSize === collapsedSize) &&
-          size !== collapsedSize
+          (lastNotifiedSize == null ||
+            lastNotifiedSize === collapsePercentage) &&
+          size !== collapsePercentage
         ) {
           onCollapse(false);
         } else if (
-          lastNotifiedSize !== collapsedSize &&
-          size === collapsedSize
+          lastNotifiedSize !== collapsePercentage &&
+          size === collapsePercentage
         ) {
           onCollapse(true);
         }
@@ -446,6 +462,18 @@ export function panelsMapToSortedArray(
   });
 }
 
+export function normalizePixelValue(
+  units: Units,
+  groupSizePixels: number,
+  value: number
+) {
+  if (units === "pixels") {
+    value = (value / groupSizePixels) * 100;
+  }
+
+  return value;
+}
+
 export function safeResizePanel(
   units: Units,
   groupSizePixels: number,
@@ -456,13 +484,11 @@ export function safeResizePanel(
 ): number {
   let { collapsedSize, collapsible, maxSize, minSize } = panel.current;
 
-  if (units === "pixels") {
-    collapsedSize = (collapsedSize / groupSizePixels) * 100;
-    if (maxSize != null) {
-      maxSize = (maxSize / groupSizePixels) * 100;
-    }
-    minSize = (minSize / groupSizePixels) * 100;
+  collapsedSize = normalizePixelValue(units, groupSizePixels, collapsedSize);
+  if (maxSize != null) {
+    maxSize = normalizePixelValue(units, groupSizePixels, maxSize);
   }
+  minSize = normalizePixelValue(units, groupSizePixels, minSize);
 
   if (collapsible) {
     if (prevSize > collapsedSize) {

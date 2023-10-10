@@ -248,6 +248,8 @@ function PanelGroupWithForwardedRef({
           setSizes(nextSizes);
 
           callPanelCallbacks(
+            units,
+            groupId,
             panelsArray,
             nextSizes,
             panelIdToLastNotifiedSizeMap
@@ -295,7 +297,13 @@ function PanelGroupWithForwardedRef({
       // In this case, the best we can do is notify on commit.
       // The callPanelCallbacks() uses its own memoization to avoid notifying panels twice in these cases.
       const panelsArray = panelsMapToSortedArray(panels);
-      callPanelCallbacks(panelsArray, sizes, panelIdToLastNotifiedSizeMap);
+      callPanelCallbacks(
+        units,
+        groupId,
+        panelsArray,
+        sizes,
+        panelIdToLastNotifiedSizeMap
+      );
     }
   }, [sizes]);
 
@@ -598,6 +606,8 @@ function PanelGroupWithForwardedRef({
           // If resize change handlers have been declared, this is the time to call them.
           // Trigger user callbacks after updating state, so that user code can override the sizes.
           callPanelCallbacks(
+            units,
+            groupId,
             panelsArray,
             nextSizes,
             panelIdToLastNotifiedSizeMap
@@ -679,7 +689,13 @@ function PanelGroupWithForwardedRef({
 
       // If resize change handlers have been declared, this is the time to call them.
       // Trigger user callbacks after updating state, so that user code can override the sizes.
-      callPanelCallbacks(panelsArray, nextSizes, panelIdToLastNotifiedSizeMap);
+      callPanelCallbacks(
+        units,
+        groupId,
+        panelsArray,
+        nextSizes,
+        panelIdToLastNotifiedSizeMap
+      );
     }
   }, []);
 
@@ -740,7 +756,13 @@ function PanelGroupWithForwardedRef({
 
       // If resize change handlers have been declared, this is the time to call them.
       // Trigger user callbacks after updating state, so that user code can override the sizes.
-      callPanelCallbacks(panelsArray, nextSizes, panelIdToLastNotifiedSizeMap);
+      callPanelCallbacks(
+        units,
+        groupId,
+        panelsArray,
+        nextSizes,
+        panelIdToLastNotifiedSizeMap
+      );
     }
   }, []);
 
@@ -833,6 +855,8 @@ function PanelGroupWithForwardedRef({
         // If resize change handlers have been declared, this is the time to call them.
         // Trigger user callbacks after updating state, so that user code can override the sizes.
         callPanelCallbacks(
+          units,
+          groupId,
           panelsArray,
           nextSizes,
           panelIdToLastNotifiedSizeMap
