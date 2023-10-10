@@ -46,6 +46,7 @@ import {
   getPanelGroup,
   getResizeHandle,
   getResizeHandlePanelIds,
+  normalizePixelValue,
   panelsMapToSortedArray,
   validatePanelGroupLayout,
   validatePanelProps,
@@ -707,7 +708,10 @@ function PanelGroupWithForwardedRef({
       return;
     }
 
-    const { collapsedSize, minSize } = panel.current;
+    let { collapsedSize, minSize } = panel.current;
+    const groupSizePixels = getAvailableGroupSizePixels(groupId);
+    collapsedSize = normalizePixelValue(units, groupSizePixels, collapsedSize);
+    minSize = normalizePixelValue(units, groupSizePixels, minSize);
 
     const sizeBeforeCollapse =
       panelSizeBeforeCollapse.current.get(id) || minSize;
