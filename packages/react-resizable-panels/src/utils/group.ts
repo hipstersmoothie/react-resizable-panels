@@ -71,6 +71,7 @@ export function adjustByDelta(
         // If the panel isn't at it's min size, we can stop here
         // this panel has room to modify.
         if (nextSize !== panel.current.minSize) {
+        if (nextSize !== prevSizes[index]) {
           hasRoom = true;
           break;
         }
