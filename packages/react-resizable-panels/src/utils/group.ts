@@ -652,7 +652,7 @@ export function validatePanelGroupLayout({
   }
 
   // If we still have remainder, the requested layout wasn't valid and we should warn about it
-  if (remainingSize.toFixed(3) !== "0.000") {
+  if (remainingSize.toFixed(3) !== "0.000" && remainingSize > 0.000000001) {
     if (isDevelopment) {
       console.error(
         `"Invalid panel group configuration; default panel sizes should total 100% but was ${
