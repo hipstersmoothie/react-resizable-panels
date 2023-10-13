@@ -12,42 +12,42 @@
     "url": "git+https://github.com/bvaughn/react-resizable-panels.git"
   },
   "source": "src/index.ts",
-  "main": "dist/react-resizable-panels.cjs.js",
-  "module": "dist/react-resizable-panels.esm.js",
+  "main": "dist/alisowski-react-resizable-panels.cjs.js",
+  "module": "dist/alisowski-react-resizable-panels.esm.js",
   "exports": {
     ".": {
       "types": {
-        "import": "./dist/react-resizable-panels.cjs.mjs",
-        "default": "./dist/react-resizable-panels.cjs.js"
+        "import": "./dist/alisowski-react-resizable-panels.cjs.mjs",
+        "default": "./dist/alisowski-react-resizable-panels.cjs.js"
       },
       "development": {
         "browser": {
-          "module": "./dist/react-resizable-panels.browser.development.esm.js",
-          "import": "./dist/react-resizable-panels.browser.development.cjs.mjs",
-          "default": "./dist/react-resizable-panels.browser.development.cjs.js"
+          "module": "./dist/alisowski-react-resizable-panels.browser.development.esm.js",
+          "import": "./dist/alisowski-react-resizable-panels.browser.development.cjs.mjs",
+          "default": "./dist/alisowski-react-resizable-panels.browser.development.cjs.js"
         },
         "node": {
-          "module": "./dist/react-resizable-panels.development.node.esm.js",
-          "import": "./dist/react-resizable-panels.development.node.cjs.mjs",
-          "default": "./dist/react-resizable-panels.development.node.cjs.js"
+          "module": "./dist/alisowski-react-resizable-panels.development.node.esm.js",
+          "import": "./dist/alisowski-react-resizable-panels.development.node.cjs.mjs",
+          "default": "./dist/alisowski-react-resizable-panels.development.node.cjs.js"
         },
-        "module": "./dist/react-resizable-panels.development.esm.js",
-        "import": "./dist/react-resizable-panels.development.cjs.mjs",
-        "default": "./dist/react-resizable-panels.development.cjs.js"
+        "module": "./dist/alisowski-react-resizable-panels.development.esm.js",
+        "import": "./dist/alisowski-react-resizable-panels.development.cjs.mjs",
+        "default": "./dist/alisowski-react-resizable-panels.development.cjs.js"
       },
       "browser": {
-        "module": "./dist/react-resizable-panels.browser.esm.js",
-        "import": "./dist/react-resizable-panels.browser.cjs.mjs",
-        "default": "./dist/react-resizable-panels.browser.cjs.js"
+        "module": "./dist/alisowski-react-resizable-panels.browser.esm.js",
+        "import": "./dist/alisowski-react-resizable-panels.browser.cjs.mjs",
+        "default": "./dist/alisowski-react-resizable-panels.browser.cjs.js"
       },
       "node": {
-        "module": "./dist/react-resizable-panels.node.esm.js",
-        "import": "./dist/react-resizable-panels.node.cjs.mjs",
-        "default": "./dist/react-resizable-panels.node.cjs.js"
+        "module": "./dist/alisowski-react-resizable-panels.node.esm.js",
+        "import": "./dist/alisowski-react-resizable-panels.node.cjs.mjs",
+        "default": "./dist/alisowski-react-resizable-panels.node.cjs.js"
       },
-      "module": "./dist/react-resizable-panels.esm.js",
-      "import": "./dist/react-resizable-panels.cjs.mjs",
-      "default": "./dist/react-resizable-panels.cjs.js"
+      "module": "./dist/alisowski-react-resizable-panels.esm.js",
+      "import": "./dist/alisowski-react-resizable-panels.cjs.mjs",
+      "default": "./dist/alisowski-react-resizable-panels.cjs.js"
     },
     "./package.json": "./package.json"
   },
