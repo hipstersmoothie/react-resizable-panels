@@ -628,14 +628,28 @@ export function validatePanelGroupLayout({
       let { maxSize, minSize } = panel.current;
 
       if (units === "pixels") {
-        minSize = (minSize / groupSizePixels) * 100;
+        minSize = normalizePixelValue(units, groupSizePixels, minSize);
         if (maxSize != null) {
-          maxSize = (maxSize / groupSizePixels) * 100;
+          maxSize = normalizePixelValue(units, groupSizePixels, maxSize);
         }
       }
 
+      if (maxSize == null) {
+        maxSize = panelsArray.reduce((accumulated, otherPanel) => {
+          const { minSize, id } = otherPanel.current;
+
+          if (minSize == null || panel.current.id === id) {
+            return accumulated;
+          }
+
+          return (
+            accumulated - normalizePixelValue(units, groupSizePixels, minSize)
+          );
+        }, 100);
+      }
+
       const size = Math.min(
-        maxSize != null ? maxSize : 100,
+        maxSize,
         Math.max(minSize, nextSizes[index] + remainingSize)
       );
 
