@@ -713,10 +713,21 @@ function PanelGroupWithForwardedRef({
     collapsedSize = normalizePixelValue(units, groupSizePixels, collapsedSize);
     minSize = normalizePixelValue(units, groupSizePixels, minSize);
 
-    const sizeBeforeCollapse =
-      panelSizeBeforeCollapse.current.get(id) || minSize;
+    // Because the browser can resize and width/heights might be in pixels
+    // and chang the sizes we should default to the minSize
+    let sizeBeforeCollapse = Math.max(
+      panelSizeBeforeCollapse.current.get(id) || minSize,
+      minSize
+    );
+
     if (!sizeBeforeCollapse) {
       return;
+    }
+
+    // When expending a panel it might always have bene collapsed.
+    // If so use the minSize as the sizeBeforeCollapse
+    if (sizeBeforeCollapse === collapsedSize) {
+      sizeBeforeCollapse = minSize;
     }
 
     const panelsArray = panelsMapToSortedArray(panels);
