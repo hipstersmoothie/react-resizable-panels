@@ -62,7 +62,7 @@
       "default": "./src/env-conditions/unknown.ts"
     }
   },
-  "types": "dist/react-resizable-panels.cjs.d.ts",
+  "types": "dist/alisowski-react-resizable-panels.cjs.d.ts",
   "scripts": {
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "watch": "parcel watch --port=2345"
