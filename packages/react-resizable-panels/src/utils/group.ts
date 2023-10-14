@@ -285,11 +285,22 @@ export function calculateDefaultLayout({
       const panel = panelsArray[index];
       let { maxSize, minSize } = panel.current;
 
-      if (units === "pixels") {
-        minSize = (minSize / groupSizePixels) * 100;
-        if (maxSize != null) {
-          maxSize = (maxSize / groupSizePixels) * 100;
-        }
+      minSize = normalizePixelValue(units, groupSizePixels, minSize);
+
+      if (maxSize == null) {
+        maxSize = panelsArray.reduce((accumulated, otherPanel) => {
+          const { minSize, id } = otherPanel.current;
+
+          if (minSize == null || panel.current.id === id) {
+            return accumulated;
+          }
+
+          return (
+            accumulated - normalizePixelValue(units, groupSizePixels, minSize)
+          );
+        }, 100);
+      } else {
+        maxSize = normalizePixelValue(units, groupSizePixels, maxSize);
       }
 
       const size = Math.min(
@@ -627,12 +638,7 @@ export function validatePanelGroupLayout({
 
       let { maxSize, minSize } = panel.current;
 
-      if (units === "pixels") {
-        minSize = normalizePixelValue(units, groupSizePixels, minSize);
-        if (maxSize != null) {
-          maxSize = normalizePixelValue(units, groupSizePixels, maxSize);
-        }
-      }
+      minSize = normalizePixelValue(units, groupSizePixels, minSize);
 
       if (maxSize == null) {
         maxSize = panelsArray.reduce((accumulated, otherPanel) => {
@@ -646,6 +652,8 @@ export function validatePanelGroupLayout({
             accumulated - normalizePixelValue(units, groupSizePixels, minSize)
           );
         }, 100);
+      } else {
+        maxSize = normalizePixelValue(units, groupSizePixels, maxSize);
       }
 
       const size = Math.min(
