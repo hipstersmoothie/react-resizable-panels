@@ -230,6 +230,7 @@ export function calculateDefaultLayout({
   const panelsArray = panelsMapToSortedArray(panels);
   const sizes = Array<number>(panelsArray.length);
 
+  const collapsed = new Set();
   let numPanelsWithSizes = 0;
   let remainingSize = 100;
 
@@ -237,7 +238,7 @@ export function calculateDefaultLayout({
   // First, all panels with defaultSize should be set as-is
   for (let index = 0; index < panelsArray.length; index++) {
     const panel = panelsArray[index];
-    const { defaultSize } = panel.current;
+    const { defaultSize, collapsedSize, id } = panel.current;
 
     if (defaultSize != null) {
       numPanelsWithSizes++;
@@ -248,6 +249,14 @@ export function calculateDefaultLayout({
           : defaultSize;
 
       remainingSize -= sizes[index];
+
+      if (
+        collapsedSize &&
+        sizes[index] ===
+          normalizePixelValue(units, groupSizePixels, collapsedSize)
+      ) {
+        collapsed.add(id);
+      }
     }
   }
 
@@ -255,7 +264,7 @@ export function calculateDefaultLayout({
   // This may require two passes, depending on min/max constraints
   for (let index = 0; index < panelsArray.length; index++) {
     const panel = panelsArray[index];
-    let { defaultSize, id, maxSize, minSize } = panel.current;
+    let { defaultSize, maxSize, minSize, collapsedSize, id } = panel.current;
     if (defaultSize != null) {
       continue;
     }
@@ -276,6 +285,13 @@ export function calculateDefaultLayout({
     sizes[index] = size;
     numPanelsWithSizes++;
     remainingSize -= size;
+
+    if (
+      collapsedSize &&
+      size === normalizePixelValue(units, groupSizePixels, collapsedSize)
+    ) {
+      collapsed.add(id);
+    }
   }
 
   // If there is additional, left over space, assign it to any panel(s) that permits it
@@ -289,15 +305,17 @@ export function calculateDefaultLayout({
 
       if (maxSize == null) {
         maxSize = panelsArray.reduce((accumulated, otherPanel) => {
-          const { minSize, id } = otherPanel.current;
+          const { minSize, collapsedSize, id } = otherPanel.current;
 
           if (minSize == null || panel.current.id === id) {
             return accumulated;
           }
 
-          return (
-            accumulated - normalizePixelValue(units, groupSizePixels, minSize)
-          );
+          const currentSize = collapsed.has(id)
+            ? normalizePixelValue(units, groupSizePixels, collapsedSize)
+            : normalizePixelValue(units, groupSizePixels, minSize);
+
+          return accumulated - currentSize;
         }, 100);
       } else {
         maxSize = normalizePixelValue(units, groupSizePixels, maxSize);
@@ -604,6 +622,7 @@ export function validatePanelGroupLayout({
   const groupSizePixels =
     units === "pixels" ? getAvailableGroupSizePixels(groupId) : NaN;
 
+  const collapsed = new Set();
   let remainingSize = 0;
 
   // First, check all of the proposed sizes against the min/max constraints
@@ -618,6 +637,12 @@ export function validatePanelGroupLayout({
       prevSize,
       nextSize
     );
+    const collapsedSize = normalizePixelValue(
+      units,
+      groupSizePixels,
+      panel.current.collapsedSize
+    );
+
     if (nextSize != safeNextSize) {
       remainingSize += nextSize - safeNextSize;
       nextSizes[index] = safeNextSize;
@@ -627,6 +652,10 @@ export function validatePanelGroupLayout({
           `Invalid size (${nextSize}) specified for Panel "${panel.current.id}" given the panel's min/max size constraints`
         );
       }
+    }
+
+    if (safeNextSize === collapsedSize) {
+      collapsed.add(panel.current.id);
     }
   }
 
@@ -642,15 +671,17 @@ export function validatePanelGroupLayout({
 
       if (maxSize == null) {
         maxSize = panelsArray.reduce((accumulated, otherPanel) => {
-          const { minSize, id } = otherPanel.current;
+          const { minSize, collapsedSize, id } = otherPanel.current;
 
           if (minSize == null || panel.current.id === id) {
             return accumulated;
           }
 
-          return (
-            accumulated - normalizePixelValue(units, groupSizePixels, minSize)
-          );
+          const currentSize = collapsed.has(id)
+            ? normalizePixelValue(units, groupSizePixels, collapsedSize)
+            : normalizePixelValue(units, groupSizePixels, minSize);
+
+          return accumulated - currentSize;
         }, 100);
       } else {
         maxSize = normalizePixelValue(units, groupSizePixels, maxSize);
