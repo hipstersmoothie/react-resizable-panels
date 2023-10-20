@@ -623,7 +623,7 @@ export function validatePanelGroupLayout({
     units === "pixels" ? getAvailableGroupSizePixels(groupId) : NaN;
 
   const collapsed = new Set();
-  let remainingSize = 0;
+  let remainingSize = prevSizes.reduce((acc, i) => acc - i, 100);
 
   // First, check all of the proposed sizes against the min/max constraints
   for (let index = 0; index < panelsArray.length; index++) {
