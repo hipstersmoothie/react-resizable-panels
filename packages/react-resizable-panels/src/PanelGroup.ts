@@ -649,6 +649,13 @@ function PanelGroupWithForwardedRef({
       return;
     }
 
+    const groupSizePixels =
+      units === "pixels" ? getAvailableGroupSizePixels(groupId) : NaN;
+    const collapsedSizeValue = normalizePixelValue(
+      units,
+      groupSizePixels,
+      collapsedSize
+    );
     const panelsArray = panelsMapToSortedArray(panels);
 
     const index = panelsArray.indexOf(panel);
@@ -670,7 +677,7 @@ function PanelGroupWithForwardedRef({
     }
 
     const isLastPanel = index === panelsArray.length - 1;
-    const delta = isLastPanel ? currentSize : collapsedSize - currentSize;
+    const delta = isLastPanel ? currentSize : collapsedSizeValue - currentSize;
 
     const nextSizes = adjustByDelta(
       null,
