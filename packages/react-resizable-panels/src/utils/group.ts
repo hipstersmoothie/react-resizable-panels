@@ -172,6 +172,8 @@ export function callPanelCallbacks(
   sizes: number[],
   panelIdToLastNotifiedSizeMap: Record<string, number>
 ) {
+  const groupPixels = getAvailableGroupSizePixels(groupId);
+
   sizes.forEach((size, index) => {
     const panelRef = panelsArray[index];
     if (!panelRef) {
@@ -194,7 +196,7 @@ export function callPanelCallbacks(
 
       const collapsePercentage = normalizePixelValue(
         units,
-        getAvailableGroupSizePixels(groupId),
+        groupPixels,
         collapsedSize
       );
 
