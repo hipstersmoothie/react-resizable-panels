@@ -162,7 +162,13 @@ export function adjustByDelta(
     return baseSizes;
   }
 
-  return nextSizes;
+  return validatePanelGroupLayout({
+    groupId,
+    panels,
+    nextSizes,
+    prevSizes,
+    units,
+  });
 }
 
 export function callPanelCallbacks(
