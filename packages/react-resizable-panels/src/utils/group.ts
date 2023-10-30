@@ -673,6 +673,10 @@ export function validatePanelGroupLayout({
     for (let index = 0; index < panelsArray.length; index++) {
       const panel = panelsArray[index];
 
+      if (collapsed.has(panel.current.id)) {
+        continue;
+      }
+
       let { maxSize, minSize } = panel.current;
 
       minSize = normalizePixelValue(units, groupSizePixels, minSize);
