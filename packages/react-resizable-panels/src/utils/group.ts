@@ -108,7 +108,7 @@ export function adjustByDelta(
         groupSizePixels,
         oppositePanel,
         oppositeBaseSize,
-        oppositeBaseSize + (fullDelta - deltaAppliedToOpposite),
+        oppositeBaseSize + (deltaApplied - deltaAppliedToOpposite),
         event
       );
 
@@ -162,13 +162,7 @@ export function adjustByDelta(
     return baseSizes;
   }
 
-  return validatePanelGroupLayout({
-    groupId,
-    panels,
-    nextSizes,
-    prevSizes,
-    units,
-  });
+  return nextSizes;
 }
 
 export function callPanelCallbacks(
