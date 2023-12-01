@@ -745,7 +745,7 @@ function PanelGroupWithForwardedRef({
     }
 
     const currentSize = prevSizes[index];
-    if (currentSize !== collapsedSize) {
+    if (currentSize !== collapsedSize && currentSize >= minSize) {
       // Panel is already expanded.
       return;
     }
