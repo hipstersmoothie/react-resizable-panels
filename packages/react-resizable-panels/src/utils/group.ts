@@ -544,7 +544,11 @@ export function safeResizePanel(
         // Keyboard events should expand a collapsed panel to the min size,
         // but mouse events should wait until the panel has reached its min size
         // to avoid a visual flickering when dragging between collapsed and min size.
-        if (nextSize < minSize) {
+        // Account for floating point math imprecision
+        if (
+          nextSize < minSize &&
+          Math.abs(minSize - nextSize).toFixed(10) !== "0.0000000000"
+        ) {
           return collapsedSize;
         }
       }
