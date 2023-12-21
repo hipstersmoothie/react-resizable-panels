@@ -89,13 +89,13 @@ export function adjustByDelta(
         deltaApplied += baseSize - nextSize;
         nextSizes[index] = nextSize;
 
-        // If the panel isn't at it's min size, we can stop here
-        // this panel has room to modify.
-        if (
-          nextSize !== prevSizes[index] &&
-          isGreaterThanOrEqualIsh(deltaApplied, fullDelta)
-        ) {
+        // If any panel has changed size, we have room to resize
+        if (nextSize !== prevSizes[index]) {
           hasRoom = true;
+        }
+
+        // If there is no more delta to apply, we can stop here.
+        if (isGreaterThanOrEqualIsh(deltaApplied, fullDelta)) {
           break;
         }
       }
