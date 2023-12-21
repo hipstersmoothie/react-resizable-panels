@@ -4,11 +4,13 @@ import { PRECISION } from "../constants";
 import { PanelData, ResizeEvent, Units } from "../types";
 
 function isGreaterThanOrEqualIsh(a: number, b: number) {
-  return a
-    .toPrecision(PRECISION)
-    .localeCompare(Math.abs(b).toPrecision(PRECISION), undefined, {
-      numeric: true,
-    });
+  return (
+    a
+      .toPrecision(PRECISION)
+      .localeCompare(Math.abs(b).toPrecision(PRECISION), undefined, {
+        numeric: true,
+      }) >= 0
+  );
 }
 
 export function adjustByDelta(
