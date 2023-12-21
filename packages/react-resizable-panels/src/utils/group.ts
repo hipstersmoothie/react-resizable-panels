@@ -3,6 +3,14 @@ import { CommittedValues, InitialDragState } from "../PanelGroup";
 import { PRECISION } from "../constants";
 import { PanelData, ResizeEvent, Units } from "../types";
 
+function isGreaterThanOrEqualIsh(a: number, b: number) {
+  return a
+    .toPrecision(PRECISION)
+    .localeCompare(Math.abs(b).toPrecision(PRECISION), undefined, {
+      numeric: true,
+    });
+}
+
 export function adjustByDelta(
   event: ResizeEvent | null,
   committedValues: CommittedValues,
@@ -81,7 +89,10 @@ export function adjustByDelta(
 
         // If the panel isn't at it's min size, we can stop here
         // this panel has room to modify.
-        if (nextSize !== prevSizes[index]) {
+        if (
+          nextSize !== prevSizes[index] &&
+          isGreaterThanOrEqualIsh(deltaApplied, fullDelta)
+        ) {
           hasRoom = true;
           break;
         }
@@ -123,9 +134,12 @@ export function adjustByDelta(
             )
           : undefined;
 
-        // If the panel isn't at it's max size, we can stop here
-        // there is room to modify this panel.
-        if (oppositeNextSize !== currentMax) {
+        // If the panel isn't at it's max size and there is not more delta,
+        // we can stop here there is room to modify this panel.
+        if (
+          (currentMax === undefined || oppositeNextSize <= currentMax) &&
+          isGreaterThanOrEqualIsh(deltaAppliedToOpposite, deltaApplied)
+        ) {
           hasRoom = true;
           break;
         }
@@ -139,17 +153,7 @@ export function adjustByDelta(
       return prevSizes;
     }
 
-    if (
-      deltaApplied
-        .toPrecision(PRECISION)
-        .localeCompare(
-          Math.abs(deltaPixels).toPrecision(PRECISION),
-          undefined,
-          {
-            numeric: true,
-          }
-        ) >= 0
-    ) {
+    if (isGreaterThanOrEqualIsh(deltaApplied, deltaPixels)) {
       break;
     }
 
