@@ -25,10 +25,13 @@ export function adjustByDelta(
 ): number[] {
   const { id: groupId, panels, units } = committedValues;
   let fullDelta = Math.abs(deltaPixels);
-  const groupSizePixels =
-    units === "pixels" ? getAvailableGroupSizePixels(groupId) : NaN;
 
-  const { sizes: initialSizes } = initialDragState || {};
+  let {
+    sizes: initialSizes,
+    groupSizePixels = units === "pixels"
+      ? getAvailableGroupSizePixels(groupId)
+      : NaN,
+  } = initialDragState || {};
 
   // If we're resizing by mouse or touch, use the initial sizes as a base.
   // This has the benefit of causing force-collapsed panels to spring back open if drag is reversed.
@@ -173,13 +176,11 @@ export function adjustByDelta(
 
 export function callPanelCallbacks(
   units: Units,
-  groupId: string,
   panelsArray: PanelData[],
   sizes: number[],
-  panelIdToLastNotifiedSizeMap: Record<string, number>
+  panelIdToLastNotifiedSizeMap: Record<string, number>,
+  initialDragState: InitialDragState | null
 ) {
-  const groupPixels = getAvailableGroupSizePixels(groupId);
-
   sizes.forEach((size, index) => {
     const panelRef = panelsArray[index];
     if (!panelRef) {
@@ -189,6 +190,7 @@ export function callPanelCallbacks(
     }
 
     const { callbacksRef, collapsedSize, collapsible, id } = panelRef.current;
+    const groupPixels = initialDragState?.groupSizePixels ?? NaN;
 
     const lastNotifiedSize = panelIdToLastNotifiedSizeMap[id];
     if (lastNotifiedSize !== size) {

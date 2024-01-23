@@ -34,7 +34,10 @@ import {
   isMouseEvent,
   isTouchEvent,
 } from "./utils/coordinates";
-import { resetGlobalCursorStyle, setGlobalCursorStyle } from "./utils/cursor";
+import {
+  resetGlobalCursorStyle as resetGlobalCursorStyleDefault,
+  setGlobalCursorStyle as setGlobalCursorStyleDefault,
+} from "./utils/cursor";
 import debounce from "./utils/debounce";
 import {
   adjustByDelta,
@@ -119,6 +122,7 @@ export type InitialDragState = {
   dragHandleRect: DOMRect;
   dragOffset: number;
   sizes: number[];
+  groupSizePixels: number;
 };
 
 export type PanelGroupProps = {
@@ -133,6 +137,8 @@ export type PanelGroupProps = {
   style?: CSSProperties;
   tagName?: ElementType;
   units?: Units;
+  setGlobalCursorStyle?: typeof setGlobalCursorStyleDefault;
+  resetGlobalCursorStyle?: typeof resetGlobalCursorStyleDefault;
 };
 
 export type ImperativePanelGroupHandle = {
@@ -154,6 +160,8 @@ function PanelGroupWithForwardedRef({
   style: styleFromProps = {},
   tagName: Type = "div",
   units = "percentages",
+  setGlobalCursorStyle = setGlobalCursorStyleDefault,
+  resetGlobalCursorStyle = resetGlobalCursorStyleDefault,
 }: PanelGroupProps & {
   forwardedRef: ForwardedRef<ImperativePanelGroupHandle>;
 }) {
@@ -250,10 +258,10 @@ function PanelGroupWithForwardedRef({
 
           callPanelCallbacks(
             units,
-            groupId,
             panelsArray,
             nextSizes,
-            panelIdToLastNotifiedSizeMap
+            panelIdToLastNotifiedSizeMap,
+            initialDragStateRef.current
           );
         }
       },
@@ -300,10 +308,10 @@ function PanelGroupWithForwardedRef({
       const panelsArray = panelsMapToSortedArray(panels);
       callPanelCallbacks(
         units,
-        groupId,
         panelsArray,
         sizes,
-        panelIdToLastNotifiedSizeMap
+        panelIdToLastNotifiedSizeMap,
+        initialDragStateRef.current
       );
     }
   }, [sizes]);
@@ -539,12 +547,11 @@ function PanelGroupWithForwardedRef({
           prevSizes,
           initialDragStateRef.current
         );
-        if (movement === 0) {
+
+        if (movement === 0 || !initialDragStateRef.current) {
           return;
         }
 
-        const groupElement = getPanelGroup(groupId)!;
-        const rect = groupElement.getBoundingClientRect();
         const isHorizontal = direction === "horizontal";
 
         // Support RTL layouts
@@ -552,7 +559,7 @@ function PanelGroupWithForwardedRef({
           movement = -movement;
         }
 
-        const size = isHorizontal ? rect.width : rect.height;
+        const size = initialDragStateRef.current?.groupSizePixels;
         const delta = (movement / size) * 100;
 
         // If a validateLayout method has been provided
@@ -608,10 +615,10 @@ function PanelGroupWithForwardedRef({
           // Trigger user callbacks after updating state, so that user code can override the sizes.
           callPanelCallbacks(
             units,
-            groupId,
             panelsArray,
             nextSizes,
-            panelIdToLastNotifiedSizeMap
+            panelIdToLastNotifiedSizeMap,
+            initialDragStateRef.current
           );
         }
 
@@ -699,10 +706,10 @@ function PanelGroupWithForwardedRef({
       // Trigger user callbacks after updating state, so that user code can override the sizes.
       callPanelCallbacks(
         units,
-        groupId,
         panelsArray,
         nextSizes,
-        panelIdToLastNotifiedSizeMap
+        panelIdToLastNotifiedSizeMap,
+        initialDragStateRef.current
       );
     }
   }, []);
@@ -780,10 +787,10 @@ function PanelGroupWithForwardedRef({
       // Trigger user callbacks after updating state, so that user code can override the sizes.
       callPanelCallbacks(
         units,
-        groupId,
         panelsArray,
         nextSizes,
-        panelIdToLastNotifiedSizeMap
+        panelIdToLastNotifiedSizeMap,
+        initialDragStateRef.current
       );
     }
   }, []);
@@ -878,10 +885,10 @@ function PanelGroupWithForwardedRef({
         // Trigger user callbacks after updating state, so that user code can override the sizes.
         callPanelCallbacks(
           units,
-          groupId,
           panelsArray,
           nextSizes,
-          panelIdToLastNotifiedSizeMap
+          panelIdToLastNotifiedSizeMap,
+          initialDragStateRef.current
         );
       }
     },
@@ -910,6 +917,7 @@ function PanelGroupWithForwardedRef({
             dragHandleRect: handleElement.getBoundingClientRect(),
             dragOffset: getDragOffset(event, id, direction),
             sizes: committedValuesRef.current.sizes,
+            groupSizePixels: getAvailableGroupSizePixels(groupId),
           };
         }
       },

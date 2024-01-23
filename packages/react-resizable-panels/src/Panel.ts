@@ -21,7 +21,6 @@ import {
   PanelOnResize,
   Units,
 } from "./types";
-import { getAvailableGroupSizePixels } from "./utils/group";
 
 export type PanelProps = {
   children?: ReactNode;
