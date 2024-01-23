@@ -190,7 +190,10 @@ export function callPanelCallbacks(
     }
 
     const { callbacksRef, collapsedSize, collapsible, id } = panelRef.current;
-    const groupPixels = initialDragState?.groupSizePixels ?? NaN;
+    const groupPixels =
+      initialDragState?.groupSizePixels ?? units === "pixels"
+        ? getAvailableGroupSizePixels(id)
+        : NaN;
 
     const lastNotifiedSize = panelIdToLastNotifiedSizeMap[id];
     if (lastNotifiedSize !== size) {
