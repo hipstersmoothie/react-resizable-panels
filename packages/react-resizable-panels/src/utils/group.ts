@@ -199,7 +199,10 @@ export function callPanelCallbacks(
       const { onCollapse, onResize } = callbacksRef.current!;
 
       if (onResize) {
-        onResize(size, lastNotifiedSize);
+        onResize(
+          normalizePercentageValue(units, groupPixels, size),
+          normalizePercentageValue(units, groupPixels, lastNotifiedSize)
+        );
       }
 
       const collapsePercentage = normalizePixelValue(
@@ -512,6 +515,7 @@ export function panelsMapToSortedArray(
   });
 }
 
+/** Converts pixel value to percentage */
 export function normalizePixelValue(
   units: Units,
   groupSizePixels: number,
@@ -519,6 +523,19 @@ export function normalizePixelValue(
 ) {
   if (units === "pixels") {
     value = (value / groupSizePixels) * 100;
+  }
+
+  return value;
+}
+
+/** Converts percentage to pixel value */
+export function normalizePercentageValue(
+  units: Units,
+  groupSizePixels: number,
+  value: number
+) {
+  if (units === "pixels") {
+    value = (value / 100) * groupSizePixels;
   }
 
   return value;
