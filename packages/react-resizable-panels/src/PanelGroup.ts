@@ -49,6 +49,7 @@ import {
   getPanelGroup,
   getResizeHandle,
   getResizeHandlePanelIds,
+  getResizeHandlesForGroup,
   normalizePixelValue,
   panelsMapToSortedArray,
   validatePanelGroupLayout,
@@ -122,7 +123,6 @@ export type InitialDragState = {
   dragHandleRect: DOMRect;
   dragOffset: number;
   sizes: number[];
-  groupSizePixels: number;
 };
 
 export type PanelGroupProps = {
@@ -214,6 +214,60 @@ function PanelGroupWithForwardedRef({
     units,
   });
 
+  const groupSizeRef = useRef<number>(NaN);
+
+  useIsomorphicLayoutEffect(() => {
+    const panelGroupElement = getPanelGroup(groupId);
+
+    if (panelGroupElement == null) {
+      return;
+    }
+
+    // set up the initial group size
+    if (isNaN(groupSizeRef.current)) {
+      groupSizeRef.current = getAvailableGroupSizePixels(groupId);
+    }
+
+    const direction = panelGroupElement.getAttribute(
+      "data-panel-group-direction"
+    );
+    const resizeHandles = getResizeHandlesForGroup(groupId);
+
+    // After that rely on a resize observer to update the group size
+    const observer = new ResizeObserver(([group]) => {
+      const subObserver = new ResizeObserver((handles) => {
+        if (direction === "horizontal") {
+          groupSizeRef.current =
+            group.contentRect.width -
+            handles.reduce((accumulated, handle) => {
+              return accumulated + handle.borderBoxSize[0].inlineSize;
+            }, 0);
+        } else {
+          groupSizeRef.current =
+            group.contentRect.height -
+            handles.reduce((accumulated, handle) => {
+              return accumulated + handle.borderBoxSize[0].blockSize;
+            }, 0);
+        }
+
+        subObserver.disconnect();
+      });
+
+      resizeHandles.forEach((handle) => {
+        subObserver.observe(handle, {
+          box: "border-box",
+        });
+      });
+    });
+    observer.observe(panelGroupElement, {
+      box: "border-box",
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [units, groupId, direction]);
+
   useImperativeHandle(
     forwardedRef,
     () => ({
@@ -222,24 +276,18 @@ function PanelGroupWithForwardedRef({
         const { sizes, units: unitsFromProps } = committedValuesRef.current;
 
         const units = unitsFromParams ?? unitsFromProps;
+
         if (units === "pixels") {
-          const groupSizePixels = getAvailableGroupSizePixels(groupId);
-          return sizes.map((size) => (size / 100) * groupSizePixels);
+          return sizes.map((size) => (size / 100) * groupSizeRef.current);
         } else {
           return sizes;
         }
       },
       setLayout: (sizes: number[], unitsFromParams?: Units) => {
-        const {
-          id: groupId,
-          panels,
-          sizes: prevSizes,
-          units,
-        } = committedValuesRef.current;
+        const { panels, sizes: prevSizes, units } = committedValuesRef.current;
 
         if ((unitsFromParams || units) === "pixels") {
-          const groupSizePixels = getAvailableGroupSizePixels(groupId);
-          sizes = sizes.map((size) => (size / groupSizePixels) * 100);
+          sizes = sizes.map((size) => (size / groupSizeRef.current) * 100);
         }
 
         const panelIdToLastNotifiedSizeMap =
@@ -247,7 +295,7 @@ function PanelGroupWithForwardedRef({
         const panelsArray = panelsMapToSortedArray(panels);
 
         const nextSizes = validatePanelGroupLayout({
-          groupId,
+          groupSizePixels: groupSizeRef.current,
           panels,
           nextSizes: sizes,
           prevSizes,
@@ -261,7 +309,7 @@ function PanelGroupWithForwardedRef({
             panelsArray,
             nextSizes,
             panelIdToLastNotifiedSizeMap,
-            initialDragStateRef.current
+            groupSizeRef.current
           );
         }
       },
@@ -311,7 +359,7 @@ function PanelGroupWithForwardedRef({
         panelsArray,
         sizes,
         panelIdToLastNotifiedSizeMap,
-        initialDragStateRef.current
+        groupSizeRef.current
       );
     }
   }, [sizes]);
@@ -338,7 +386,7 @@ function PanelGroupWithForwardedRef({
       // Validate saved sizes in case something has changed since last render
       // e.g. for pixel groups, this could be the size of the window
       const validatedSizes = validatePanelGroupLayout({
-        groupId,
+        groupSizePixels: groupSizeRef.current,
         panels,
         nextSizes: defaultSizes,
         prevSizes: defaultSizes,
@@ -348,9 +396,9 @@ function PanelGroupWithForwardedRef({
       setSizes(validatedSizes);
     } else {
       const sizes = calculateDefaultLayout({
-        groupId,
         panels,
         units,
+        groupSizePixels: groupSizeRef.current,
       });
 
       setSizes(sizes);
@@ -410,7 +458,7 @@ function PanelGroupWithForwardedRef({
         const { panels, sizes: prevSizes } = committedValuesRef.current;
 
         const nextSizes = validatePanelGroupLayout({
-          groupId,
+          groupSizePixels: groupSizeRef.current,
           panels,
           nextSizes: prevSizes,
           prevSizes,
@@ -440,8 +488,7 @@ function PanelGroupWithForwardedRef({
 
       const units = unitsFromParams ?? unitsFromProps;
       if (units === "pixels") {
-        const groupSizePixels = getAvailableGroupSizePixels(groupId);
-        return (size / 100) * groupSizePixels;
+        return (size / 100) * groupSizeRef.current;
       } else {
         return size;
       }
@@ -559,8 +606,7 @@ function PanelGroupWithForwardedRef({
           movement = -movement;
         }
 
-        const size = initialDragStateRef.current?.groupSizePixels;
-        const delta = (movement / size) * 100;
+        const delta = (movement / groupSizeRef.current) * 100;
 
         // If a validateLayout method has been provided
         // it's important to use it before updating the mouse cursor
@@ -572,7 +618,8 @@ function PanelGroupWithForwardedRef({
           delta,
           prevSizes,
           panelSizeBeforeCollapse.current,
-          initialDragStateRef.current
+          initialDragStateRef.current,
+          groupSizeRef.current
         );
 
         const sizesChanged = !areEqual(prevSizes, nextSizes);
@@ -618,7 +665,7 @@ function PanelGroupWithForwardedRef({
             panelsArray,
             nextSizes,
             panelIdToLastNotifiedSizeMap,
-            initialDragStateRef.current
+            groupSizeRef.current
           );
         }
 
@@ -656,11 +703,9 @@ function PanelGroupWithForwardedRef({
       return;
     }
 
-    const groupSizePixels =
-      units === "pixels" ? getAvailableGroupSizePixels(groupId) : NaN;
     const collapsedSizeValue = normalizePixelValue(
       units,
-      groupSizePixels,
+      groupSizeRef.current,
       collapsedSize
     );
     const panelsArray = panelsMapToSortedArray(panels);
@@ -694,7 +739,8 @@ function PanelGroupWithForwardedRef({
       delta,
       prevSizes,
       panelSizeBeforeCollapse.current,
-      null
+      null,
+      groupSizeRef.current
     );
     if (prevSizes !== nextSizes) {
       const panelIdToLastNotifiedSizeMap =
@@ -709,7 +755,7 @@ function PanelGroupWithForwardedRef({
         panelsArray,
         nextSizes,
         panelIdToLastNotifiedSizeMap,
-        initialDragStateRef.current
+        groupSizeRef.current
       );
     }
   }, []);
@@ -723,7 +769,7 @@ function PanelGroupWithForwardedRef({
     }
 
     let { collapsedSize, minSize } = panel.current;
-    const groupSizePixels = getAvailableGroupSizePixels(groupId);
+    const groupSizePixels = groupSizeRef.current;
     collapsedSize = normalizePixelValue(units, groupSizePixels, collapsedSize);
     minSize = normalizePixelValue(units, groupSizePixels, minSize);
 
@@ -775,7 +821,8 @@ function PanelGroupWithForwardedRef({
       delta,
       prevSizes,
       panelSizeBeforeCollapse.current,
-      null
+      null,
+      groupSizeRef.current
     );
     if (prevSizes !== nextSizes) {
       const panelIdToLastNotifiedSizeMap =
@@ -790,7 +837,7 @@ function PanelGroupWithForwardedRef({
         panelsArray,
         nextSizes,
         panelIdToLastNotifiedSizeMap,
-        initialDragStateRef.current
+        groupSizeRef.current
       );
     }
   }, []);
@@ -805,8 +852,7 @@ function PanelGroupWithForwardedRef({
       } = committedValuesRef.current;
 
       if ((unitsFromParams || units) === "pixels") {
-        const groupSizePixels = getAvailableGroupSizePixels(groupId);
-        nextSize = (nextSize / groupSizePixels) * 100;
+        nextSize = (nextSize / groupSizeRef.current) * 100;
       }
 
       const panel = panels.get(id);
@@ -817,7 +863,7 @@ function PanelGroupWithForwardedRef({
       let { collapsedSize, collapsible, maxSize, minSize } = panel.current;
 
       if (units === "pixels") {
-        const groupSizePixels = getAvailableGroupSizePixels(groupId);
+        const groupSizePixels = groupSizeRef.current;
         minSize = (minSize / groupSizePixels) * 100;
         if (maxSize != null) {
           maxSize = (maxSize / groupSizePixels) * 100;
@@ -873,7 +919,8 @@ function PanelGroupWithForwardedRef({
         delta,
         prevSizes,
         panelSizeBeforeCollapse.current,
-        null
+        null,
+        groupSizeRef.current
       );
       if (prevSizes !== nextSizes) {
         const panelIdToLastNotifiedSizeMap =
@@ -888,7 +935,7 @@ function PanelGroupWithForwardedRef({
           panelsArray,
           nextSizes,
           panelIdToLastNotifiedSizeMap,
-          initialDragStateRef.current
+          groupSizeRef.current
         );
       }
     },
@@ -917,7 +964,6 @@ function PanelGroupWithForwardedRef({
             dragHandleRect: handleElement.getBoundingClientRect(),
             dragOffset: getDragOffset(event, id, direction),
             sizes: committedValuesRef.current.sizes,
-            groupSizePixels: getAvailableGroupSizePixels(groupId),
           };
         }
       },

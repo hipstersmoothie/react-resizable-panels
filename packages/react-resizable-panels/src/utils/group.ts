@@ -21,17 +21,13 @@ export function adjustByDelta(
   deltaPixels: number,
   prevSizes: number[],
   panelSizeBeforeCollapse: Map<string, number>,
-  initialDragState: InitialDragState | null
+  initialDragState: InitialDragState | null,
+  groupSizePixels: number
 ): number[] {
-  const { id: groupId, panels, units } = committedValues;
+  const { panels, units } = committedValues;
   let fullDelta = Math.abs(deltaPixels);
 
-  let {
-    sizes: initialSizes,
-    groupSizePixels = units === "pixels"
-      ? getAvailableGroupSizePixels(groupId)
-      : NaN,
-  } = initialDragState || {};
+  let { sizes: initialSizes } = initialDragState || {};
 
   // If we're resizing by mouse or touch, use the initial sizes as a base.
   // This has the benefit of causing force-collapsed panels to spring back open if drag is reversed.
@@ -179,7 +175,7 @@ export function callPanelCallbacks(
   panelsArray: PanelData[],
   sizes: number[],
   panelIdToLastNotifiedSizeMap: Record<string, number>,
-  initialDragState: InitialDragState | null
+  groupSizePixels: number
 ) {
   sizes.forEach((size, index) => {
     const panelRef = panelsArray[index];
@@ -190,11 +186,6 @@ export function callPanelCallbacks(
     }
 
     const { callbacksRef, collapsedSize, collapsible, id } = panelRef.current;
-    const groupPixels =
-      initialDragState?.groupSizePixels ?? units === "pixels"
-        ? getAvailableGroupSizePixels(id)
-        : NaN;
-
     const lastNotifiedSize = panelIdToLastNotifiedSizeMap[id];
     if (lastNotifiedSize !== size) {
       panelIdToLastNotifiedSizeMap[id] = size;
@@ -203,14 +194,14 @@ export function callPanelCallbacks(
 
       if (onResize) {
         onResize(
-          normalizePercentageValue(units, groupPixels, size),
-          normalizePercentageValue(units, groupPixels, lastNotifiedSize)
+          normalizePercentageValue(units, groupSizePixels, size),
+          normalizePercentageValue(units, groupSizePixels, lastNotifiedSize)
         );
       }
 
       const collapsePercentage = normalizePixelValue(
         units,
-        groupPixels,
+        groupSizePixels,
         collapsedSize
       );
 
@@ -233,16 +224,14 @@ export function callPanelCallbacks(
 }
 
 export function calculateDefaultLayout({
-  groupId,
+  groupSizePixels,
   panels,
   units,
 }: {
-  groupId: string;
+  groupSizePixels: number;
   panels: Map<string, PanelData>;
   units: Units;
 }): number[] {
-  const groupSizePixels =
-    units === "pixels" ? getAvailableGroupSizePixels(groupId) : NaN;
   const panelsArray = panelsMapToSortedArray(panels);
   const sizes = Array<number>(panelsArray.length);
 
@@ -400,6 +389,7 @@ export function getAvailableGroupSizePixels(groupId: string): number {
     "data-panel-group-direction"
   );
   const resizeHandles = getResizeHandlesForGroup(groupId);
+
   if (direction === "horizontal") {
     return (
       panelGroupElement.offsetWidth -
@@ -636,13 +626,13 @@ export function validatePanelProps(units: Units, panelData: PanelData) {
 }
 
 export function validatePanelGroupLayout({
-  groupId,
   panels,
   nextSizes,
   prevSizes,
   units,
+  groupSizePixels,
 }: {
-  groupId: string;
+  groupSizePixels: number;
   panels: Map<string, PanelData>;
   nextSizes: number[];
   prevSizes: number[];
@@ -652,9 +642,6 @@ export function validatePanelGroupLayout({
   nextSizes = [...nextSizes];
 
   const panelsArray = panelsMapToSortedArray(panels);
-
-  const groupSizePixels =
-    units === "pixels" ? getAvailableGroupSizePixels(groupId) : NaN;
 
   const collapsed = new Set();
   let remainingSize = prevSizes.reduce((acc, i) => acc - i, 100);
