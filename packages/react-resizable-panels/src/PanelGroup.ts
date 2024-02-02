@@ -233,8 +233,10 @@ function PanelGroupWithForwardedRef({
     );
     const resizeHandles = getResizeHandlesForGroup(groupId);
 
-    // After that rely on a resize observer to update the group size
+    // We need to know total group size to calculate panel sizes.
+    // First we watch for group size changes.
     const observer = new ResizeObserver(([group]) => {
+      // When the size changes we also measure the size of the panels in the group
       const subObserver = new ResizeObserver((handles) => {
         if (direction === "horizontal") {
           groupSizeRef.current =
@@ -250,7 +252,23 @@ function PanelGroupWithForwardedRef({
             }, 0);
         }
 
+        // We only need to really watch the parent for size updates
+        // So we can disconnect the subObserver
         subObserver.disconnect();
+
+        // Now that we know the actual size of the group we can calculate the sizes of the panels
+        const { panels, sizes: prevSizes } = committedValuesRef.current;
+        const nextSizes = validatePanelGroupLayout({
+          groupSizePixels: groupSizeRef.current,
+          panels,
+          nextSizes: prevSizes,
+          prevSizes,
+          units,
+        });
+
+        if (!areEqual(prevSizes, nextSizes)) {
+          setSizes(nextSizes);
+        }
       });
 
       resizeHandles.forEach((handle) => {
@@ -259,6 +277,8 @@ function PanelGroupWithForwardedRef({
         });
       });
     });
+
+    // This runs while the component is mounted
     observer.observe(panelGroupElement, {
       box: "border-box",
     });
@@ -449,33 +469,6 @@ function PanelGroupWithForwardedRef({
       }
     }
   }, [autoSaveId, panels, sizes, storage]);
-
-  useIsomorphicLayoutEffect(() => {
-    // Pixel panel constraints need to be reassessed after a group resize
-    // We can avoid the ResizeObserver overhead for relative layouts
-    if (units === "pixels") {
-      const resizeObserver = new ResizeObserver(() => {
-        const { panels, sizes: prevSizes } = committedValuesRef.current;
-
-        const nextSizes = validatePanelGroupLayout({
-          groupSizePixels: groupSizeRef.current,
-          panels,
-          nextSizes: prevSizes,
-          prevSizes,
-          units,
-        });
-        if (!areEqual(prevSizes, nextSizes)) {
-          setSizes(nextSizes);
-        }
-      });
-
-      resizeObserver.observe(getPanelGroup(groupId)!);
-
-      return () => {
-        resizeObserver.disconnect();
-      };
-    }
-  }, [groupId, units]);
 
   const getPanelSize = useCallback(
     (id: string, unitsFromParams?: Units) => {
