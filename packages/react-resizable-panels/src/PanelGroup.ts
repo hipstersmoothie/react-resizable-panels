@@ -264,6 +264,9 @@ function PanelGroupWithForwardedRef({
           nextSizes: prevSizes,
           prevSizes,
           units,
+          // Here we are using validatePanelGroupLayout to update the sizes as the window resizes.
+          // We don't use adjustByDelta because we don't want to calculate the delta size for the screen.
+          logWarnings: false,
         });
 
         if (!areEqual(prevSizes, nextSizes)) {

@@ -631,12 +631,14 @@ export function validatePanelGroupLayout({
   prevSizes,
   units,
   groupSizePixels,
+  logWarnings = true,
 }: {
   groupSizePixels: number;
   panels: Map<string, PanelData>;
   nextSizes: number[];
   prevSizes: number[];
   units: Units;
+  logWarnings?: boolean;
 }): number[] {
   // Clone because this method modifies
   nextSizes = [...nextSizes];
@@ -668,9 +670,9 @@ export function validatePanelGroupLayout({
       remainingSize += nextSize - safeNextSize;
       nextSizes[index] = safeNextSize;
 
-      if (isDevelopment) {
+      if (isDevelopment && logWarnings) {
         console.error(
-          `Invalid size (${nextSize}) specified for Panel "${panel.current.id}" given the panel's min/max size constraints`
+          `Invalid size (${nextSize}) specified for Panel "${panel.current.id}" given the panel's min (${panel.current.minSize}) and max (${panel.current.maxSize}) size constraints`
         );
       }
     }
@@ -731,7 +733,7 @@ export function validatePanelGroupLayout({
 
   // If we still have remainder, the requested layout wasn't valid and we should warn about it
   if (remainingSize.toFixed(3) !== "0.000" && remainingSize > 0.000000001) {
-    if (isDevelopment) {
+    if (isDevelopment && logWarnings) {
       console.error(
         `"Invalid panel group configuration; default panel sizes should total 100% but was ${
           100 - remainingSize
