@@ -513,7 +513,10 @@ function PanelGroupWithForwardedRef({
 
         return {
           flexBasis: 0,
-          flexGrow: defaultSize != null ? defaultSize : undefined,
+          flexGrow:
+            defaultSize != null && groupSizeRef.current
+              ? normalizePixelValue(units, groupSizeRef.current, defaultSize)
+              : 1,
           flexShrink: 1,
 
           // Without this, Panel sizes may be unintentionally overridden by their content.
