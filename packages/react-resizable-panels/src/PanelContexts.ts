@@ -8,7 +8,11 @@ export const PanelGroupContext = createContext<{
   direction: "horizontal" | "vertical";
   expandPanel: (id: string) => void;
   getPanelSize: (id: string, units?: Units) => number;
-  getPanelStyle: (id: string, defaultSize: number | null) => CSSProperties;
+  getPanelStyle: (
+    id: string,
+    defaultSize: number | null,
+    initialLayout?: "tight"
+  ) => CSSProperties;
   groupId: string;
   registerPanel: (id: string, panel: PanelData) => void;
   registerResizeHandle: (id: string) => ResizeHandler;

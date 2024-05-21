@@ -493,7 +493,11 @@ function PanelGroupWithForwardedRef({
   );
 
   const getPanelStyle = useCallback(
-    (id: string, defaultSize: number | null): CSSProperties => {
+    (
+      id: string,
+      defaultSize: number | null,
+      initialLayout?: "tight"
+    ): CSSProperties => {
       const { panels } = committedValuesRef.current;
 
       // Before mounting, Panels will not yet have registered themselves.
@@ -511,12 +515,36 @@ function PanelGroupWithForwardedRef({
           }
         }
 
+        if (defaultSize != null && groupSizeRef.current) {
+          return {
+            flexBasis: 0,
+            flexGrow: normalizePixelValue(
+              units,
+              groupSizeRef.current,
+              defaultSize
+            ),
+            flexShrink: 1,
+            // Without this, Panel sizes may be unintentionally overridden by their content.
+            overflow: "hidden",
+          };
+        }
+
+        if (initialLayout === "tight") {
+          return {
+            flexBasis:
+              units === "pixels" && defaultSize != null
+                ? `${defaultSize}px`
+                : "auto",
+            flexGrow: 0,
+            flexShrink: 0,
+            // Without this, Panel sizes may be unintentionally overridden by their content.
+            overflow: "hidden",
+          };
+        }
+
         return {
           flexBasis: 0,
-          flexGrow:
-            defaultSize != null && groupSizeRef.current
-              ? normalizePixelValue(units, groupSizeRef.current, defaultSize)
-              : 1,
+          flexGrow: 1,
           flexShrink: 1,
 
           // Without this, Panel sizes may be unintentionally overridden by their content.

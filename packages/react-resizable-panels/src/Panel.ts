@@ -36,6 +36,11 @@ export type PanelProps = {
   order?: number | null;
   style?: CSSProperties;
   tagName?: ElementType;
+  /**
+   * Controls how the initial paint of the group happens when there is no group size
+   * Useful when using pixel based units
+   */
+  initialLayout?: "tight";
 };
 
 export type ImperativePanelHandle = {
@@ -62,6 +67,7 @@ function PanelWithForwardedRef({
   order = null,
   style: styleFromProps = {},
   tagName: Type = "div",
+  initialLayout,
 }: PanelProps & {
   forwardedRef: ForwardedRef<ImperativePanelHandle>;
 }) {
@@ -105,7 +111,7 @@ function PanelWithForwardedRef({
     callbacksRef.current.onResize = onResize;
   });
 
-  const style = getPanelStyle(panelId, defaultSize);
+  const style = getPanelStyle(panelId, defaultSize, initialLayout);
 
   const committedValuesRef = useRef<{
     size: number;
