@@ -33,15 +33,41 @@ function Content() {
   return (
     <div className={styles.PanelGroupWrapper}>
       <PanelGroup className={styles.PanelGroup} direction="horizontal">
-        <Panel className={styles.PanelRow} defaultSize={30} minSize={20}>
+        <Panel
+          id="left"
+          className={styles.PanelRow}
+          defaultSize={10}
+          minSize={10}
+          maxSize={20}
+        >
           <div className={styles.Centered}>left</div>
         </Panel>
         <ResizeHandle className={styles.ResizeHandle} />
-        <Panel className={styles.PanelRow} minSize={30}>
+        <Panel
+          id="middle"
+          className={styles.PanelRow}
+          minSize={10}
+          maxSize={10}
+        >
           <div className={styles.Centered}>middle</div>
         </Panel>
         <ResizeHandle className={styles.ResizeHandle} />
-        <Panel className={styles.PanelRow} defaultSize={30} minSize={20}>
+        <Panel
+          id="middle2"
+          className={styles.PanelRow}
+          minSize={10}
+          defaultSize={15}
+          maxSize={20}
+        >
+          <div className={styles.Centered}>middle2</div>
+        </Panel>
+        <ResizeHandle className={styles.ResizeHandle} />
+        <Panel
+          id="right"
+          className={styles.PanelRow}
+          defaultSize={30}
+          minSize={20}
+        >
           <div className={styles.Centered}>right</div>
         </Panel>
       </PanelGroup>

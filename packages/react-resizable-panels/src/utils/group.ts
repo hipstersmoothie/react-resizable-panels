@@ -14,7 +14,7 @@ export function adjustByDelta(
   initialDragState: InitialDragState | null
 ): number[] {
   const { id: groupId, panels, units } = committedValues;
-
+  const fullDelta = Math.abs(deltaPixels);
   const groupSizePixels =
     units === "pixels" ? getAvailableGroupSizePixels(groupId) : NaN;
 
@@ -38,84 +38,104 @@ export function adjustByDelta(
   // A positive delta means the panel immediately before the resizer should "expand".
   // This is accomplished by shrinking/contracting (and shifting) one or more of the panels after the resizer.
 
-  // Max-bounds check the panel being expanded first.
-  {
-    const pivotId = deltaPixels < 0 ? idAfter : idBefore;
-    const index = panelsArray.findIndex(
-      (panel) => panel.current.id === pivotId
-    );
-    const panel = panelsArray[index];
-    const baseSize = baseSizes[index];
+  const pivotId = deltaPixels < 0 ? idBefore : idAfter;
+  const startIndex = panelsArray.findIndex(
+    (panel) => panel.current.id === pivotId
+  );
+  let index = startIndex;
 
-    const nextSize = safeResizePanel(
-      units,
-      groupSizePixels,
-      panel,
-      baseSize,
-      baseSize + Math.abs(deltaPixels),
-      event
-    );
-    if (baseSize === nextSize) {
-      // If there's no room for the pivot panel to grow, we can ignore this drag update.
-      return baseSizes;
-    } else {
-      if (nextSize === 0 && baseSize > 0) {
-        panelSizeBeforeCollapse.set(pivotId, baseSize);
+  while (index >= 0 && index < panelsArray.length) {
+    let hasRoom = false;
+
+    // First try adjusting the pivotId panel and any panels after it
+    while (index >= 0 && index < panelsArray.length) {
+      const panel = panelsArray[index];
+      const baseSize = baseSizes[index];
+      const nextSize = safeResizePanel(
+        units,
+        groupSizePixels,
+        panel,
+        baseSize,
+        baseSize - fullDelta + deltaApplied,
+        event
+      );
+
+      if (baseSize !== nextSize) {
+        if (nextSize === 0 && baseSize > 0) {
+          panelSizeBeforeCollapse.set(panel.current.id, baseSize);
+        }
+
+        deltaApplied += baseSize - nextSize;
+        nextSizes[index] = nextSize;
+
+        // If the panel isn't at it's min size, we can stop here
+        // this panel has room to modify.
+        if (nextSize !== panel.current.minSize) {
+          hasRoom = true;
+          break;
+        }
       }
 
-      deltaPixels = deltaPixels < 0 ? baseSize - nextSize : nextSize - baseSize;
-    }
-  }
-
-  let pivotId = deltaPixels < 0 ? idBefore : idAfter;
-  let index = panelsArray.findIndex((panel) => panel.current.id === pivotId);
-  while (true) {
-    const panel = panelsArray[index];
-    const baseSize = baseSizes[index];
-
-    const deltaRemaining = Math.abs(deltaPixels) - Math.abs(deltaApplied);
-
-    const nextSize = safeResizePanel(
-      units,
-      groupSizePixels,
-      panel,
-      baseSize,
-      baseSize - deltaRemaining,
-      event
-    );
-    if (baseSize !== nextSize) {
-      if (nextSize === 0 && baseSize > 0) {
-        panelSizeBeforeCollapse.set(panel.current.id, baseSize);
-      }
-
-      deltaApplied += baseSize - nextSize;
-
-      nextSizes[index] = nextSize;
-
-      if (
-        deltaApplied
-          .toPrecision(PRECISION)
-          .localeCompare(
-            Math.abs(deltaPixels).toPrecision(PRECISION),
-            undefined,
-            {
-              numeric: true,
-            }
-          ) >= 0
-      ) {
-        break;
-      }
+      index = deltaPixels < 0 ? index - 1 : index + 1;
     }
 
-    if (deltaPixels < 0) {
-      if (--index < 0) {
-        break;
-      }
-    } else {
-      if (++index >= panelsArray.length) {
-        break;
-      }
+    // If we were unable to resize any of the pivot panels or remaining panels, return the previous state.
+    if (!hasRoom) {
+      return prevSizes;
     }
+
+    // Check if there is room to add in the opposite direction
+    let deltaAppliedToOpposite = 0;
+    let oppositeIndex = deltaPixels < 0 ? startIndex + 1 : startIndex - 1;
+    hasRoom = false;
+
+    while (oppositeIndex >= 0 && oppositeIndex < panelsArray.length) {
+      const oppositePanel = panelsArray[oppositeIndex];
+      const oppositeBaseSize = baseSizes[oppositeIndex];
+      const oppositeNextSize = safeResizePanel(
+        units,
+        groupSizePixels,
+        oppositePanel,
+        oppositeBaseSize,
+        oppositeBaseSize + (fullDelta - deltaAppliedToOpposite),
+        event
+      );
+
+      if (oppositeBaseSize !== oppositeNextSize) {
+        nextSizes[oppositeIndex] = oppositeNextSize;
+        deltaAppliedToOpposite += oppositeNextSize - oppositeBaseSize;
+
+        // If the panel isn't at it's max size, we can stop here
+        // there is room to modify this panel.
+        if (oppositeNextSize !== oppositePanel.current.maxSize) {
+          hasRoom = true;
+          break;
+        }
+      }
+
+      oppositeIndex = deltaPixels < 0 ? oppositeIndex + 1 : oppositeIndex - 1;
+    }
+
+    // The opposite panel(s) have reached their max size, so we can't resize any further.
+    if (!hasRoom) {
+      return prevSizes;
+    }
+
+    if (
+      deltaApplied
+        .toPrecision(PRECISION)
+        .localeCompare(
+          Math.abs(deltaPixels).toPrecision(PRECISION),
+          undefined,
+          {
+            numeric: true,
+          }
+        ) >= 0
+    ) {
+      break;
+    }
+
+    index = deltaPixels < 0 ? index - 1 : index + 1;
   }
 
   // If we were unable to resize any of the panels panels, return the previous state.
@@ -123,11 +143,6 @@ export function adjustByDelta(
   if (deltaApplied === 0) {
     return baseSizes;
   }
-
-  // Adjust the pivot panel before, but only by the amount that surrounding panels were able to shrink/contract.
-  pivotId = deltaPixels < 0 ? idAfter : idBefore;
-  index = panelsArray.findIndex((panel) => panel.current.id === pivotId);
-  nextSizes[index] = baseSizes[index] + deltaApplied;
 
   return nextSizes;
 }
