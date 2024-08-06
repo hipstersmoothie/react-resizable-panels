@@ -242,12 +242,20 @@ function PanelGroupWithForwardedRef({
           groupSizeRef.current =
             group.contentRect.width -
             handles.reduce((accumulated, handle) => {
+              if (!handle.borderBoxSize[0]) {
+                return accumulated;
+              }
+
               return accumulated + handle.borderBoxSize[0].inlineSize;
             }, 0);
         } else {
           groupSizeRef.current =
             group.contentRect.height -
             handles.reduce((accumulated, handle) => {
+              if (!handle.borderBoxSize[0]) {
+                return accumulated;
+              }
+
               return accumulated + handle.borderBoxSize[0].blockSize;
             }, 0);
         }
